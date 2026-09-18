@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+/* ── design tokens ──────────────────────────────────────────────
+ * The app is dark-first on purpose: a pixel portrait of a vanishing
+ * species reads best on a near-black field, the way the original
+ * WWF prints did on a dark page. Light mode is kept legible but the
+ * product's home is the dark end.
+ * ─────────────────────────────────────────────────────────────── */
+
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.145 0.006 285);
+  --foreground: oklch(0.97 0.004 286);
+  --card: oklch(0.185 0.006 286);
+  --card-foreground: oklch(0.97 0.004 286);
+  --popover: oklch(0.175 0.006 286);
+  --popover-foreground: oklch(0.97 0.004 286);
+  --primary: oklch(0.82 0.16 76);
+  --primary-foreground: oklch(0.18 0.03 70);
+  --secondary: oklch(0.26 0.007 286);
+  --secondary-foreground: oklch(0.96 0.004 286);
+  --muted: oklch(0.24 0.006 286);
+  --muted-foreground: oklch(0.68 0.012 286);
+  --accent: oklch(0.28 0.01 286);
+  --accent-foreground: oklch(0.97 0.004 286);
+  --destructive: oklch(0.62 0.21 26);
+  --destructive-foreground: oklch(0.98 0.004 286);
+  --border: oklch(0.99 0 0 / 10%);
+  --input: oklch(0.99 0 0 / 12%);
+  --ring: oklch(0.82 0.16 76 / 55%);
+
+  /* signal colours used by the data chrome */
+  --ember: oklch(0.82 0.16 76);
+  --ember-deep: oklch(0.62 0.19 42);
+  --alive: oklch(0.8 0.14 175);
+}
+
+.light {
+  --background: oklch(0.985 0.003 286);
+  --foreground: oklch(0.18 0.006 286);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.006 286);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.006 286);
+  --primary: oklch(0.58 0.17 52);
+  --primary-foreground: oklch(0.99 0.004 286);
+  --secondary: oklch(0.94 0.004 286);
+  --secondary-foreground: oklch(0.22 0.006 286);
+  --muted: oklch(0.95 0.004 286);
+  --muted-foreground: oklch(0.48 0.01 286);
+  --accent: oklch(0.94 0.004 286);
+  --accent-foreground: oklch(0.2 0.006 286);
+  --border: oklch(0.18 0.006 286 / 12%);
+  --input: oklch(0.18 0.006 286 / 16%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ember: var(--ember);
+  --color-ember-deep: var(--ember-deep);
+  --color-alive: var(--alive);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--ember) 35%, transparent);
+    color: var(--foreground);
+  }
+
+  /* a restrained scrollbar so long panels don't shout */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklch, var(--foreground) 14%, transparent);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--foreground) 26%, transparent);
+    background-clip: content-box;
+  }
+}
+
+@layer utilities {
+  /* the faint dot lattice that runs under every surface — a reminder
+   * that everything here is made of pixels */
+  .bg-lattice {
+    background-image: radial-gradient(
+      color-mix(in oklch, var(--foreground) 12%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(
+          color-mix(in oklch, var(--foreground) 6%, transparent) 1px,
+          transparent 1px
+        ),
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--foreground) 6%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 44px 44px;
+  }
+
+  .glass {
+    background: color-mix(in oklch, var(--card) 72%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+
+  .text-ember-gradient {
+    background: linear-gradient(
+      100deg,
+      var(--foreground) 0%,
+      var(--ember) 55%,
+      var(--ember-deep) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .ring-glow {
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--ember) 30%, transparent),
+      0 18px 60px -22px color-mix(in oklch, var(--ember) 45%, transparent);
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2.6s ease-in-out infinite;
+}

@@ -1,0 +1,56 @@
+# Extinction — Population by Pixel
+
+Bir görsel ve kalan birey sayısı verirsiniz; uygulama o görseli **tam o sayıda
+pikselden** oluşan bir portreye çevirir, seçtiklerinizi galeriye dizer ve tam
+ekran bir sunuma dönüştürür.
+
+Fikir, WWF Japonya'nın 2008 tarihli *Population by Pixel* kampanyasına
+(Hakuhodo C&D Tokyo) ait: afişteki piksel sayısı, o türden doğada kalan birey
+sayısına eşit. Bu depo o denklemi bir araca çeviriyor.
+
+## Neler var
+
+| Rota | İş |
+| --- | --- |
+| `/` | Koridor akışlı manifesto sayfası; kendi eserleriniz kartlara düşer |
+| `/studio` | Yükleme, pikselleştirme ve künye paneli |
+| `/gallery` | Üretilen eserler, seçim, karşılaştırmalı büyütme |
+| `/present` | Açılış + eser + kapanış slaytlarından oluşan tam ekran sunum |
+
+Her şey tarayıcıda çalışır: sunucu yok, yükleme yok. Eserler IndexedDB'de
+saklanır, dışa aktarım PNG olarak inerken sunum aynı cihazda kalır.
+
+## Piksel motoru
+
+`lib/pixelate.ts`, sayının **tam** tutmasını iki adımda çözer:
+
+1. **Yoğunluk.** Hücreler kare olduğu için ızgara tek bir sayıyla (`cols`)
+   tanımlanır. İkili arama, konunun hedef sayıyı taşıyabildiği *en seyrek*
+   ızgarayı bulur — en seyreği, çünkü hücreler sayının izin verdiği kadar
+   büyük olmalı ki azalan nüfus dağılan bir görüntü gibi okunsun.
+2. **Seçim.** Konunun değdiği tüm hücreler, kapsanma oranına göre sıralanır ve
+   tam olarak hedef kadarı alınır. Böylece sayı tanım gereği tutar; elenenler
+   siluetin en soluk kenar hücreleri olur.
+
+İki adım da maske ve maskelenmiş renk kanalları üzerinde kurulan *summed-area
+table*'lara dayanır; her dikdörtgen sorgusu O(1) olduğu için çözüm tam boy bir
+fotoğrafta bile etkileşimli kalır.
+
+Şeffaf PNG'lerde siluet doğrudan alfa kanalından gelir. Düz fotoğraflarda arka
+plan, kare kenarlarından örneklenen medyan renkle tahmin edilir; **arka plan
+eşiği** kaydırıcısı bu toleransı yönetir. `Tam kare` modunda siluet aranmaz,
+sayı satır × sütun olarak karşılanır.
+
+## Geliştirme
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm run build
+```
+
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
+shadcn dizin düzeni (`components/ui`, `lib/utils`) · lucide-react · framer-motion.
+
+`node scripts/generate-samples.mjs`, galeri boşken koridorda dönen örnek
+posterleri yeniden üretir.
