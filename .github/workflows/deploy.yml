@@ -36,6 +36,11 @@ jobs:
         env:
           # Proje sayfası /<repo> altında yayınlanır.
           NEXT_PUBLIC_BASE_PATH: ${{ github.event.repository.name != format('{0}.github.io', github.repository_owner) && format('/{0}', github.event.repository.name) || '' }}
+          # Galeri deponun kendisinde durduğu için yönetici yayınları buraya
+          # commit atar. Değerler yapılan depodan geldiği için fork'ta ya da
+          # dal adı değiştiğinde elle düzeltme gerekmez.
+          NEXT_PUBLIC_REPO: ${{ github.repository }}
+          NEXT_PUBLIC_REPO_BRANCH: ${{ github.ref_name }}
         run: npm run build
 
       - name: Disable Jekyll processing

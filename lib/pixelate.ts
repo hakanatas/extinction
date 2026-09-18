@@ -122,6 +122,23 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Pull a same-origin image into a data URL.
+ *
+ * A published work carries its source as a URL, but editing and re-publishing
+ * need the bytes: the studio stores what it will later commit.
+ */
+export async function urlToDataUrl(url: string): Promise<string> {
+  if (url.startsWith("data:")) return url;
+  const blob = await (await fetch(url)).blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Kaynak görsel okunamadı."));
+    reader.readAsDataURL(blob);
+  });
+}
+
 /** Read a picked file as a data URL, downscaled so it survives storage. */
 export async function fileToDataUrl(file: File, maxSide = 1400): Promise<string> {
   const raw = await new Promise<string>((resolve, reject) => {
@@ -636,6 +653,10 @@ export function mosaicToDataUrl(
   mosaic: Mosaic,
   settings: PixelSettings,
   width = 1200,
+  /** WebP keeps the transparency and is a third of PNG's size; published
+   *  posters live in a git repository, so that difference compounds. Not
+   *  every browser can encode it, hence the feature test on the result. */
+  preferWebp = false,
 ): string {
   const canvas = document.createElement("canvas");
   const spanCols = mosaic.bounds.maxCol - mosaic.bounds.minCol + 1;
@@ -646,5 +667,10 @@ export function mosaicToDataUrl(
     padding: Math.round(width * 0.03),
     box: { w: width, h: height },
   });
+
+  if (preferWebp) {
+    const webp = canvas.toDataURL("image/webp", 0.92);
+    if (webp.startsWith("data:image/webp")) return webp;
+  }
   return canvas.toDataURL("image/png");
 }

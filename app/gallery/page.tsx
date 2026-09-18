@@ -5,7 +5,10 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CheckCheck,
+  CloudUpload,
   Eye,
+  EyeOff,
+  Loader2,
   Pencil,
   Play,
   Plus,
@@ -15,20 +18,31 @@ import {
 } from "lucide-react";
 import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 import { buttonStyles } from "@/components/ui/button";
-import { statusOf, useWorks } from "@/lib/works-store";
-import type { Work } from "@/lib/db";
+import { statusOf, useWorks, type GalleryWork } from "@/lib/works-store";
 import { cn, formatCount } from "@/lib/utils";
 
 export default function GalleryPage() {
-  const { works, ready, selected, toggle, remove, selectAll } = useWorks();
-  const [open, setOpen] = React.useState<Work | null>(null);
+  const { works, ready, selected, isSelected, toggle, remove, selectAll, isAdmin, publish, busy } =
+    useWorks();
+  const [open, setOpen] = React.useState<GalleryWork | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   const totalPixels = selected.reduce((s, w) => s + w.count, 0);
+  const unpublished = works.filter((w) => w.origin === "local" && !w.pendingPublish).length;
+
+  const act = async (run: () => Promise<void>) => {
+    setError(null);
+    try {
+      await run();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "İşlem tamamlanamadı.");
+    }
+  };
 
   return (
     <main className="min-h-screen pb-24">
-      {/* A shallow slice of the corridor, running only the selected works —
-          the gallery's own contents, already moving. */}
+      {/* A shallow slice of the corridor, running the deck — the gallery's own
+          contents, already moving. */}
       <section className="relative h-[46svh] min-h-[320px] w-full overflow-hidden border-b border-border">
         {works.length > 0 ? (
           <ImageStreamHero
@@ -45,19 +59,19 @@ export default function GalleryPage() {
 
         <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-end px-6 pb-10">
           <h1 className="font-display text-5xl tracking-tight sm:text-6xl">Galeri</h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[0.82rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="eyebrow-sm mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
             <span className="tabular">{ready ? works.length : "—"} eser</span>
-            <span className="h-3 w-px bg-border" />
-            <span className="tabular">{selected.length} seçili</span>
-            <span className="h-3 w-px bg-border" />
-            <span className="tabular">{formatCount(totalPixels)} piksel sunumda</span>
+            <span className="hidden h-3 w-px bg-border sm:block" />
+            <span className="tabular">{selected.length} sunumda</span>
+            <span className="hidden h-3 w-px bg-border sm:block" />
+            <span className="tabular">{formatCount(totalPixels)} piksel</span>
           </div>
         </div>
       </section>
 
       <div className="mx-auto max-w-6xl px-6">
         <div className="sticky top-20 z-30 -mx-6 mb-8 flex flex-wrap items-center justify-between gap-3 px-6 py-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => selectAll(selected.length !== works.length)}
               disabled={!works.length}
@@ -85,6 +99,21 @@ export default function GalleryPage() {
           </Link>
         </div>
 
+        {error && (
+          <p className="mb-6 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-[0.95rem] text-destructive">
+            {error}
+          </p>
+        )}
+
+        {unpublished > 0 && (
+          <p className="mb-6 rounded-xl border border-border bg-card/40 px-4 py-3 text-[0.95rem] leading-relaxed text-muted-foreground">
+            {unpublished} eser yalnızca bu cihazda duruyor.{" "}
+            {isAdmin
+              ? "Herkesin görmesi için kartın üstündeki bulut simgesiyle yayınlayın."
+              : "Herkesin görebilmesi için bir yöneticinin yayınlaması gerekiyor."}
+          </p>
+        )}
+
         {ready && works.length === 0 ? (
           <EmptyState />
         ) : (
@@ -94,9 +123,14 @@ export default function GalleryPage() {
                 key={w.id}
                 work={w}
                 index={i}
+                selected={isSelected(w.id)}
+                busy={busy === w.id}
+                canPublish={isAdmin && w.origin === "local" && !w.pendingPublish}
+                canDelete={w.origin === "local" || isAdmin}
                 onToggle={() => toggle(w.id)}
                 onOpen={() => setOpen(w)}
-                onDelete={() => remove(w.id)}
+                onPublish={() => act(() => publish(w))}
+                onDelete={() => act(() => remove(w))}
               />
             ))}
           </div>
@@ -107,10 +141,12 @@ export default function GalleryPage() {
         {open && (
           <Lightbox
             work={open}
+            canDelete={open.origin === "local" || isAdmin}
             onClose={() => setOpen(null)}
             onDelete={() => {
-              remove(open.id);
+              const target = open;
               setOpen(null);
+              act(() => remove(target));
             }}
           />
         )}
@@ -122,14 +158,24 @@ export default function GalleryPage() {
 function Card({
   work,
   index,
+  selected,
+  busy,
+  canPublish,
+  canDelete,
   onToggle,
   onOpen,
+  onPublish,
   onDelete,
 }: {
-  work: Work;
+  work: GalleryWork;
   index: number;
+  selected: boolean;
+  busy: boolean;
+  canPublish: boolean;
+  canDelete: boolean;
   onToggle: () => void;
   onOpen: () => void;
+  onPublish: () => void;
   onDelete: () => void;
 }) {
   const status = statusOf(work.status);
@@ -142,7 +188,7 @@ function Card({
       transition={{ duration: 0.45, delay: Math.min(index * 0.04, 0.4), ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "group relative overflow-hidden rounded-2xl border bg-card/40 transition-all duration-300",
-        work.selected ? "border-primary/50 ring-glow" : "border-border hover:border-foreground/25",
+        selected ? "border-primary/50 ring-glow" : "border-border hover:border-foreground/25",
       )}
     >
       <button onClick={onOpen} className="block w-full cursor-zoom-in" aria-label={`${work.title} posterini aç`}>
@@ -160,13 +206,19 @@ function Card({
           >
             {status.short}
           </span>
+
+          {work.origin === "local" && (
+            <span className="absolute bottom-3 left-3 rounded-full border border-border bg-background/80 px-2.5 py-1 font-mono text-[0.72rem] text-muted-foreground backdrop-blur">
+              {work.pendingPublish ? "yayınlanıyor…" : "yalnızca bu cihazda"}
+            </span>
+          )}
         </div>
       </button>
 
       <div className="flex items-end justify-between gap-3 p-4">
         <div className="min-w-0">
           <h3 className="truncate text-base font-medium tracking-tight">{work.title}</h3>
-          <p className="truncate font-display text-xs italic text-muted-foreground">
+          <p className="truncate font-display text-[0.95rem] italic text-muted-foreground">
             {work.latin || work.region || "—"}
           </p>
         </div>
@@ -179,26 +231,41 @@ function Card({
           except where there is no hover to ride in on: on a touch screen
           they would simply be unreachable, so there they stay put. */}
       <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
-        <IconAction onClick={onToggle} active={work.selected} title={work.selected ? "Seçimden çıkar" : "Sunuma ekle"}>
-          <Eye className="h-3.5 w-3.5" />
+        <IconAction
+          onClick={onToggle}
+          active={selected}
+          title={selected ? "Sunumdan çıkar" : "Sunuma ekle"}
+        >
+          {selected ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
         </IconAction>
+
         <Link href={`/studio?id=${work.id}`} className={iconClass(false)} title="Stüdyoda aç">
           <Pencil className="h-3.5 w-3.5" />
         </Link>
-        {/* Two taps, and the second one says what it will do: a single
-            mis-tap should never be able to destroy a work. */}
-        <button
-          onClick={() => (confirm ? onDelete() : setConfirm(true))}
-          onBlur={() => setConfirm(false)}
-          title={confirm ? "Silmek için tekrar dokun" : "Sil"}
-          className={cn(
-            iconClass(false, confirm),
-            confirm && "w-auto gap-1.5 px-3 text-[0.78rem] font-medium",
-          )}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-          {confirm && <span>Sil?</span>}
-        </button>
+
+        {canPublish && (
+          <IconAction onClick={onPublish} title="Yayınla — herkes görsün" disabled={busy}>
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CloudUpload className="h-3.5 w-3.5" />}
+          </IconAction>
+        )}
+
+        {canDelete && (
+          // Two taps, and the second one says what it will do: a single
+          // mis-tap should never be able to destroy a work.
+          <button
+            onClick={() => (confirm ? onDelete() : setConfirm(true))}
+            onBlur={() => setConfirm(false)}
+            disabled={busy}
+            title={confirm ? "Silmek için tekrar dokun" : work.origin === "published" ? "Yayından kaldır" : "Sil"}
+            className={cn(
+              iconClass(false, confirm),
+              confirm && "w-auto gap-1.5 px-3 text-[0.78rem] font-medium",
+            )}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            {confirm && <span>{work.origin === "published" ? "Kaldır?" : "Sil?"}</span>}
+          </button>
+        )}
       </div>
     </motion.article>
   );
@@ -206,7 +273,7 @@ function Card({
 
 function iconClass(active: boolean, danger = false) {
   return cn(
-    "flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur transition-colors",
+    "flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur transition-colors disabled:opacity-50",
     danger
       ? "border-destructive/50 bg-destructive/20 text-destructive"
       : active
@@ -233,8 +300,8 @@ function EmptyState() {
     <div className="flex flex-col items-center gap-6 rounded-3xl border border-dashed border-border bg-card/20 px-6 py-24 text-center">
       <p className="font-display text-3xl tracking-tight">Galeri henüz boş</p>
       <p className="max-w-md text-base leading-relaxed text-muted-foreground">
-        Stüdyoda bir görsel ve kalan birey sayısı ver; ürettiğin her poster buraya düşsün,
-        seçtiklerin sunuma girsin.
+        Stüdyoda bir görsel ve kalan birey sayısı verin; ürettiğiniz her poster buraya
+        düşsün, yayınlananları herkes görsün.
       </p>
       <Link href="/studio" className={buttonStyles("default", "lg")}>
         <Plus className="h-4 w-4" />
@@ -246,10 +313,12 @@ function EmptyState() {
 
 function Lightbox({
   work,
+  canDelete,
   onClose,
   onDelete,
 }: {
-  work: Work;
+  work: GalleryWork;
+  canDelete: boolean;
   onClose: () => void;
   onDelete: () => void;
 }) {
@@ -297,7 +366,7 @@ function Lightbox({
               showSource ? "opacity-100" : "opacity-0",
             )}
           />
-          <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-background/70 px-3 py-1 font-mono text-[0.75rem] uppercase tracking-widest text-muted-foreground backdrop-blur">
+          <span className="eyebrow-sm pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-background/70 px-3 py-1 text-muted-foreground backdrop-blur">
             {showSource ? "kaynak" : "üstüne gel: kaynak"}
           </span>
         </div>
@@ -320,21 +389,28 @@ function Lightbox({
             <span className="tabular block font-mono text-5xl text-ember-gradient">
               {formatCount(work.count)}
             </span>
-            <span className="font-mono text-[0.8rem] uppercase tracking-[0.18em] text-muted-foreground">
-              kalan birey = piksel
-            </span>
+            <span className="eyebrow-sm text-muted-foreground">kalan birey = piksel</span>
           </div>
 
           <dl className="grid grid-cols-2 gap-4 border-t border-border pt-5 text-sm">
             <Meta label="Bölge" value={work.region || "—"} />
             <Meta label="Izgara" value={`${work.cols} × ${work.rows}`} />
             <Meta label="Çözüm" value={work.settings.mode === "subject" ? "Konu" : "Tam kare"} />
-            <Meta label="Basılan piksel" value={formatCount(work.actual)} />
+            <Meta
+              label="Durum"
+              value={
+                work.origin === "published"
+                  ? "Yayında"
+                  : work.pendingPublish
+                    ? "Yayınlanıyor"
+                    : "Bu cihazda"
+              }
+            />
           </dl>
 
-          {work.note && <p className="text-sm leading-relaxed text-muted-foreground">{work.note}</p>}
+          {work.note && <p className="text-base leading-relaxed text-muted-foreground">{work.note}</p>}
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link href={`/studio?id=${work.id}`} className={buttonStyles("outline", "sm")}>
               <Pencil className="h-3.5 w-3.5" />
               Stüdyoda aç
@@ -343,14 +419,20 @@ function Lightbox({
               <Play className="h-3 w-3 fill-current" />
               Sunumda göster
             </Link>
-            <button
-              onClick={() => (confirm ? onDelete() : setConfirm(true))}
-              onBlur={() => setConfirm(false)}
-              className={buttonStyles("destructive", "sm", "ml-auto")}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {confirm ? "Emin misin?" : "Sil"}
-            </button>
+            {canDelete && (
+              <button
+                onClick={() => (confirm ? onDelete() : setConfirm(true))}
+                onBlur={() => setConfirm(false)}
+                className={buttonStyles("destructive", "sm", "ml-auto")}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {confirm
+                  ? "Emin misin?"
+                  : work.origin === "published"
+                    ? "Yayından kaldır"
+                    : "Sil"}
+              </button>
+            )}
           </div>
         </div>
 
@@ -369,9 +451,7 @@ function Lightbox({
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-mono text-[0.75rem] uppercase tracking-[0.16em] text-muted-foreground">
-        {label}
-      </dt>
+      <dt className="eyebrow-sm text-muted-foreground">{label}</dt>
       <dd className="mt-1 tabular">{value}</dd>
     </div>
   );

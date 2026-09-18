@@ -1,7 +1,10 @@
-/* A pixel poster carries two data URLs, so a handful of them blows past
+/* Local workspace: works made on this device that are not (yet) published.
+ *
+ * A pixel poster carries two data URLs, so a handful of them blows past
  * localStorage's quota. IndexedDB is the only local store that holds them
  * comfortably — this is the smallest wrapper that makes it feel like a
- * key/value map. */
+ * key/value map. The shared gallery lives in the repository instead; see
+ * lib/published.ts. */
 
 import type { PixelSettings } from "@/lib/pixelate";
 
@@ -25,8 +28,8 @@ export interface Work {
   rows: number;
   settings: PixelSettings;
   createdAt: number;
-  /** In the gallery's selection, and therefore in the presentation. */
-  selected: boolean;
+  /** Committed to the repository, waiting for the deploy that publishes it. */
+  pendingPublish?: boolean;
 }
 
 const DB = "extinction";

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Check,
+  CloudUpload,
   Download,
   ImagePlus,
   Loader2,
@@ -21,6 +22,7 @@ import {
   fileToDataUrl,
   loadImage,
   mosaicToDataUrl,
+  urlToDataUrl,
   prepareImage,
   solveMosaic,
   type Mosaic,
@@ -54,7 +56,7 @@ export default function StudioPage() {
 
 function Studio() {
   const params = useSearchParams();
-  const { save, byId, ready } = useWorks();
+  const { saveLocal, publish, isAdmin, byId, ready } = useWorks();
 
   const [source, setSource] = React.useState<string | null>(null);
   const [img, setImg] = React.useState<HTMLImageElement | null>(null);
@@ -67,6 +69,7 @@ function Studio() {
   const [saved, setSaved] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [editing, setEditing] = React.useState<string | null>(null);
+  const [publishing, setPublishing] = React.useState(false);
 
   const patch = (p: Partial<PixelSettings>) => setSettings((s) => ({ ...s, ...p }));
 
@@ -86,7 +89,11 @@ function Studio() {
       status: work.status,
       note: work.note,
     });
-    setSource(work.source);
+    // A published work's source is a URL; the studio needs the bytes so that
+    // saving or re-publishing has something to commit.
+    urlToDataUrl(work.source)
+      .then(setSource)
+      .catch(() => setError("Kaynak görsel yüklenemedi."));
   }, [editId, ready, byId]);
 
   React.useEffect(() => {
@@ -170,7 +177,7 @@ function Studio() {
   }, []);
 
   const onSave = async () => {
-    if (!mosaic || !source) return;
+    if (!mosaic || !source) return undefined;
     const previous = editing ? byId(editing) : undefined;
     const work: Work = {
       id: editing ?? uid(),
@@ -185,14 +192,30 @@ function Studio() {
       rows: mosaic.rows,
       settings,
       source,
-      poster: mosaicToDataUrl(mosaic, settings, 1100),
+      poster: mosaicToDataUrl(mosaic, settings, 1100, true),
       createdAt: previous?.createdAt ?? Date.now(),
-      selected: previous?.selected ?? true,
     };
-    await save(work);
+    await saveLocal(work);
     setEditing(work.id);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2400);
+    return work;
+  };
+
+  /* Publishing is saving plus a commit, so it always saves first: a failed
+   * push should still leave the work safely on this device. */
+  const onPublish = async () => {
+    const work = await onSave();
+    if (!work) return;
+    setPublishing(true);
+    try {
+      await publish(work);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Yayınlanamadı.");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const onDownload = () => {
@@ -466,8 +489,23 @@ function Studio() {
         <div className="glass flex shrink-0 items-center gap-2 border-t border-border p-4">
           <Button onClick={onSave} disabled={!mosaic} className="flex-1">
             {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-            {saved ? "Kaydedildi" : editing ? "Güncelle" : "Galeriye ekle"}
+            {saved ? "Kaydedildi" : editing ? "Güncelle" : "Bu cihaza kaydet"}
           </Button>
+          {isAdmin && (
+            <Button
+              variant="subtle"
+              onClick={onPublish}
+              disabled={!mosaic || publishing}
+              title="Yayınla — herkes görsün"
+            >
+              {publishing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CloudUpload className="h-4 w-4" />
+              )}
+              Yayınla
+            </Button>
+          )}
           <Button variant="outline" size="icon" onClick={onDownload} disabled={!mosaic} title="PNG indir">
             <Download className="h-4 w-4" />
           </Button>

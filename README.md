@@ -15,11 +15,42 @@ bir araç; WWF ya da ajansla bir ilişkisi yoktur.
 | --- | --- |
 | `/` | Manifesto: koridor akışı, kalan sayı şeridi ve kaydırdıkça piksel sayısı düşen "yok oluş" bölümü |
 | `/studio` | Yükleme, pikselleştirme ve künye paneli |
-| `/gallery` | Üretilen eserler, seçim, karşılaştırmalı büyütme, silme |
+| `/gallery` | Yayındaki + yerel eserler, sunum seçimi, büyütme, yayınlama/kaldırma |
 | `/present` | Açılış + eser + kapanış slaytlarından oluşan tam ekran sunum |
 
-Her şey tarayıcıda çalışır: sunucu yok, yükleme yok. Eserler IndexedDB'de
-saklanır, dışa aktarım PNG olarak inerken sunum aynı cihazda kalır.
+## Galeri nerede duruyor
+
+Site statik, bu yüzden **depo veri tabanıdır**: yayındaki eserler depodaki
+dosyalardır ve *yayınlamak bir commit atmaktır*.
+
+```
+public/content/works.json        # künye listesi (herkesin gördüğü galeri)
+public/content/works/<id>.webp   # poster
+public/content/sources/<id>.png  # kaynak görsel
+```
+
+- **Ziyaretçi** `works.json`'ı okur; hangi cihazdan bakarsa baksın aynı
+  galeriyi görür. Hesap, giriş, istek yok.
+- **Yönetici** girişi bir GitHub token'ıdır: yalnızca bu depo için
+  *Contents: read and write* izni olan ince ayarlı (fine-grained) bir token.
+  Depoya commit atabilen kişi galeriye de yayınlayabilir — ikisi aynı yetki.
+  Token yalnızca yöneticinin tarayıcısında durur, GitHub dışında hiçbir yere
+  gitmez ve depoya yazılan hiçbir dosyaya girmez.
+- Bir yayın **tek commit**tir (poster + kaynak + künye), Git Data API ile:
+  üç ayrı commit üç ayrı yayın ve künyenin henüz var olmayan dosyaları
+  gösterdiği ara durumlar demek olurdu. Commit, yayını tetikler; eser
+  yaklaşık bir dakika sonra herkeste görünür.
+- Yayınlanmamış eserler o cihazın IndexedDB'sinde kalır ve kartta
+  "yalnızca bu cihazda" etiketiyle görünür.
+- Sunum listesi (hangi eserler slaytlara girecek) cihaza özeldir; kimse
+  kimsenin seçimini değiştirmez ve seçim commit üretmez.
+
+Depoyu kendi adınıza çatallarsanız (fork) elle ayar gerekmez: yayın akışı
+`NEXT_PUBLIC_REPO` ve `NEXT_PUBLIC_REPO_BRANCH` değerlerini derlediği
+depodan doldurur.
+
+Not: kaldırılan bir eserin dosyaları HEAD'den silinir ama git geçmişinde
+kalır; galeri büyüdükçe deponun boyutu da büyür.
 
 ## Piksel motoru
 

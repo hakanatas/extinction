@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Images, Layers, Play, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorks } from "@/lib/works-store";
+import { AdminGate } from "@/components/admin-gate";
 
 const LINKS = [
   { href: "/", label: "Manifesto", icon: Sparkles },
@@ -52,6 +53,8 @@ export function SiteNav() {
             </Link>
           );
         })}
+
+        <AdminGate className="ml-1" />
 
         <Link
           href="/present"
