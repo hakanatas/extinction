@@ -7,6 +7,7 @@ import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 import { buttonStyles } from "@/components/ui/button";
 import { useWorks } from "@/lib/works-store";
 import { formatCount } from "@/lib/utils";
+import { asset } from "@/lib/base-path";
 
 /** Shown until the user has made work of their own. */
 const SAMPLES = [
@@ -18,7 +19,7 @@ const SAMPLES = [
   "axolotl",
   "condor",
   "pangolin",
-].map((n) => ({ src: `/samples/${n}.svg`, alt: `${n} piksel portresi` }));
+].map((n) => ({ src: asset(`/samples/${n}.svg`), alt: `${n} piksel portresi` }));
 
 const STEPS = [
   {

@@ -41,13 +41,39 @@ plan, kare kenarlarından örneklenen medyan renkle tahmin edilir; **arka plan
 eşiği** kaydırıcısı bu toleransı yönetir. `Tam kare` modunda siluet aranmaz,
 sayı satır × sütun olarak karşılanır.
 
+## Yayınlama (GitHub Pages)
+
+Uygulamanın sunucu tarafı yok — pikselleştirme, saklama ve dışa aktarma
+tamamen tarayıcıda çalışır — bu yüzden statik site olarak dışa aktarılır
+(`output: "export"`) ve GitHub Pages gerçek bir sunucu gibi iş görür.
+
+Tek seferlik ayar: depoda **Settings → Pages → Build and deployment →
+Source: GitHub Actions**'ı seçin. Sonrasında `main` (ya da bu geliştirme
+dalına) her push, `.github/workflows/deploy.yml` üzerinden siteyi yayınlar.
+Adres `https://<kullanıcı>.github.io/<depo>/` olur.
+
+Proje sayfaları `/<depo>` alt yolunda yayınlandığı için build,
+`NEXT_PUBLIC_BASE_PATH` değişkeninden bu ön eki alır; workflow bunu depo
+adından otomatik doldurur. Değişken boşken (yerel geliştirme, Vercel,
+Netlify) site kök dizinden servis edilir ve hiçbir şey değişmez.
+
+Yerelde aynı çıktıyı denemek için:
+
+```bash
+NEXT_PUBLIC_BASE_PATH=/extinction npm run build   # out/ klasörünü üretir
+npx serve out                                     # ya da herhangi bir statik sunucu
+```
+
 ## Geliştirme
 
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm run build
+npm run build    # statik dışa aktarım -> out/
 ```
+
+Statik dışa aktarımda `next start` kullanılmaz; `out/` klasörünü herhangi bir
+statik sunucuyla servis edin.
 
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
 shadcn dizin düzeni (`components/ui`, `lib/utils`) · lucide-react · framer-motion.
