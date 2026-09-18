@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { renderMosaic, type Mosaic, type PixelSettings } from "@/lib/pixelate";
+import { ANIMATE_LIMIT, renderMosaic, type Mosaic, type PixelSettings } from "@/lib/pixelate";
 
 /**
  * Paints a mosaic and keeps it painted: it re-renders on resize, on every
@@ -46,7 +46,10 @@ export function PixelCanvas({
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (!animate || reduced) {
+    // Assembling means repainting every cell once a frame. That is a lovely
+    // effect at three thousand cells and a frozen tab at a hundred thousand,
+    // where the individual pixels are too small to be seen arriving anyway.
+    if (!animate || reduced || mosaic.cells.length > ANIMATE_LIMIT) {
       progress.current = 1;
       paint();
       return;

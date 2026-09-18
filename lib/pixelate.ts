@@ -28,8 +28,16 @@
 
 import { clamp } from "@/lib/utils";
 
+const formatTr = (n: number) => n.toLocaleString("tr-TR");
+
 /** Upper bound on drawn cells. Past this the canvas stops being a poster. */
-export const MAX_CELLS = 260_000;
+export const MAX_CELLS = 200_000;
+/** Above this, the glow is dropped: see the note in `renderMosaic`. */
+export const GLOW_LIMIT = 20_000;
+/** Above this, cells are drawn as plain rectangles. */
+export const ROUND_LIMIT = 90_000;
+/** Above this, a mosaic is painted in one go rather than assembled frame by frame. */
+export const ANIMATE_LIMIT = 15_000;
 /** Resolution the analysis runs at. Bigger buys nothing but latency. */
 const ANALYSIS_MAX = 900;
 
@@ -268,6 +276,11 @@ function boundsOf(cells: PixelCell[], cols: number, rows: number): Mosaic["bound
   return { minCol, minRow, maxCol, maxRow };
 }
 
+/** Share of the frame the mask covers, 0–1. Never zero, so it can divide. */
+function opaqueShare(a: Analysis) {
+  return Math.max(0.02, rect(a.maskSat, a.w, 0, 0, a.w, a.h) / (a.w * a.h));
+}
+
 function rowsFor(cols: number, w: number, h: number) {
   return Math.max(1, Math.round((cols * h) / w));
 }
@@ -294,10 +307,15 @@ function countCells(a: Analysis, cols: number, coverage: number) {
 interface Candidate extends PixelCell {
   /** Share of the cell covered by the subject, 0–1. */
   ratio: number;
+  /** Squared distance from the subject's centre, filled in before sorting. */
+  d2: number;
 }
 
+/** Coverage below which a cell is fringe, not subject. */
+const CANDIDATE_FLOOR = 0.06;
+
 /** Every cell the subject touches at all, with how much of it it touches. */
-function candidates(a: Analysis, cols: number, floor = 0.06): Candidate[] {
+function candidates(a: Analysis, cols: number, floor = CANDIDATE_FLOOR): Candidate[] {
   const rows = rowsFor(cols, a.w, a.h);
   const out: Candidate[] = [];
   for (let row = 0; row < rows; row++) {
@@ -316,6 +334,7 @@ function candidates(a: Analysis, cols: number, floor = 0.06): Candidate[] {
         col,
         row,
         ratio,
+        d2: 0,
         r: rect(a.rSat, a.w, x0, y0, x1, y1) / on,
         g: rect(a.gSat, a.w, x0, y0, x1, y1) / on,
         b: rect(a.bSat, a.w, x0, y0, x1, y1) / on,
@@ -356,6 +375,24 @@ export function prepareImage(img: HTMLImageElement, settings: PixelSettings): Pr
   return { analysis: analyse(img, settings), settings };
 }
 
+/**
+ * The most pixels this picture can actually carry.
+ *
+ * A subject that covers a third of the frame runs out of cells long before
+ * the grid does, and asking for more than it has is not a slow solve — it is
+ * an impossible one. Knowing the ceiling cheaply lets the UI clamp to it
+ * instead of grinding toward a warning.
+ */
+export function capacityOf(prepared: PreparedImage): number {
+  const { analysis: a, settings } = prepared;
+  const aspect = a.w / a.h;
+  if (settings.mode === "frame") {
+    return Math.max(1, Math.floor(MAX_CELLS * opaqueShare(a)));
+  }
+  const maxCols = Math.max(2, Math.floor(Math.sqrt(MAX_CELLS * aspect)));
+  return countCells(a, maxCols, CANDIDATE_FLOOR);
+}
+
 /** One-shot: prepare and solve. Use `prepareImage` + `solveMosaic` for a series. */
 export function buildMosaic(
   img: HTMLImageElement,
@@ -371,17 +408,20 @@ export function solveMosaic(prepared: PreparedImage, target: number): Mosaic {
   const wanted = Math.max(1, Math.round(target));
 
   if (settings.mode === "frame") {
-    // No silhouette to trim, so the count is cols * rows: walk a small
-    // neighbourhood of the ideal aspect-matched grid and take the best product.
-    const ideal = Math.max(1, Math.round(Math.sqrt(wanted * aspect)));
-    let best = { cols: ideal, rows: Math.max(1, Math.round(wanted / ideal)), miss: Infinity };
+    // No silhouette to trim, so the count is cols * rows — except where the
+    // source is transparent, whose empty cells are dropped on the way out.
+    // Sizing the grid by the opaque share puts the surviving count back on
+    // the number that was asked for.
+    const grid = Math.min(MAX_CELLS, Math.round(wanted / opaqueShare(a)));
+    const ideal = Math.max(1, Math.round(Math.sqrt(grid * aspect)));
+    let best = { cols: ideal, rows: Math.max(1, Math.round(grid / ideal)), miss: Infinity };
     for (let cols = Math.max(1, ideal - 8); cols <= ideal + 8; cols++) {
-      const rows = Math.max(1, Math.round(wanted / cols));
-      const miss = Math.abs(cols * rows - wanted);
+      const rows = Math.max(1, Math.round(grid / cols));
+      const miss = Math.abs(cols * rows - grid);
       if (miss < best.miss) best = { cols, rows, miss };
       if (miss === 0) break;
     }
-    const capped = best.cols * best.rows > MAX_CELLS;
+    const capped = grid >= MAX_CELLS;
     const cols = capped ? Math.max(1, Math.round(Math.sqrt(MAX_CELLS * aspect))) : best.cols;
     const rows = capped ? Math.max(1, Math.round(MAX_CELLS / cols)) : best.rows;
     const cells = collectGrid(a, cols, rows);
@@ -393,11 +433,10 @@ export function solveMosaic(prepared: PreparedImage, target: number): Mosaic {
       count: cells.length,
       target: wanted,
       aspect,
-      warning: capped
-        ? `Bu sayı tek bir tuvale sığmıyor; ${MAX_CELLS.toLocaleString("tr-TR")} pikselde sınırlandı.`
-        : cells.length === wanted
-          ? null
-          : "Görselin şeffaf bölgeleri ızgaradan düştü; sayı tam oturmadı.",
+      warning:
+        capped || Math.abs(cells.length - wanted) > Math.max(2, wanted * 0.02)
+          ? `Bu görselde ızgara bu sayıya tam oturmuyor; ${formatTr(cells.length)} piksel çizildi.`
+          : null,
     };
   }
 
@@ -436,10 +475,15 @@ export function solveMosaic(prepared: PreparedImage, target: number): Mosaic {
     }
     cx /= pool.length;
     cy /= pool.length;
-    pool.sort((p, q) => {
-      if (q.ratio !== p.ratio) return q.ratio - p.ratio;
-      return Math.hypot(p.col - cx, p.row - cy) - Math.hypot(q.col - cx, q.row - cy);
-    });
+    // Measured once per cell rather than inside the comparator: a sort of
+    // 100k candidates calls that comparator over a million times, and a
+    // Math.hypot in there was costing more than the whole solve.
+    for (const c of pool) {
+      const dx = c.col - cx;
+      const dy = c.row - cy;
+      c.d2 = dx * dx + dy * dy;
+    }
+    pool.sort((p, q) => (q.ratio !== p.ratio ? q.ratio - p.ratio : p.d2 - q.d2));
     pool.length = wanted;
   }
 
@@ -466,14 +510,19 @@ function collectGrid(a: Analysis, cols: number, rows: number) {
       const x0 = Math.round((col * a.w) / cols);
       const x1 = Math.max(x0 + 1, Math.round(((col + 1) * a.w) / cols));
       const area = (x1 - x0) * (y1 - y0);
-      const on = Math.max(1, rect(a.maskSat, a.w, x0, y0, x1, y1));
+      const on = rect(a.maskSat, a.w, x0, y0, x1, y1);
       if (on < area * 0.35) continue;
+      // Guard the division only. Clamping `on` itself before the test let a
+      // wholly transparent cell pass wherever cells got small enough that
+      // `area * 0.35` fell below 1 — which is exactly where a dense frame
+      // mosaic lives, so half the empty background was being painted.
+      const weight = Math.max(1, on);
       cells.push({
         col,
         row,
-        r: rect(a.rSat, a.w, x0, y0, x1, y1) / on,
-        g: rect(a.gSat, a.w, x0, y0, x1, y1) / on,
-        b: rect(a.bSat, a.w, x0, y0, x1, y1) / on,
+        r: rect(a.rSat, a.w, x0, y0, x1, y1) / weight,
+        g: rect(a.gSat, a.w, x0, y0, x1, y1) / weight,
+        b: rect(a.bSat, a.w, x0, y0, x1, y1) / weight,
         order: hash(col * 73_856_093 + row * 19_349_663),
       });
     }
@@ -542,14 +591,18 @@ export function renderMosaic(
         ? size * clamp(settings.radius, 0, 0.5)
         : 0;
 
-  if (settings.glow) {
+  // A canvas shadow is priced per shape, and past a few thousand cells it
+  // dominates everything else — on a dense mosaic it is also invisible,
+  // because neighbouring cells bloom into each other. So it is a treatment
+  // for sparse posters only.
+  if (settings.glow && mosaic.cells.length <= GLOW_LIMIT) {
     ctx.shadowColor = "rgba(255, 190, 110, 0.35)";
     ctx.shadowBlur = Math.max(2, size * 0.9);
   }
 
   const reveal = clamp(progress, 0, 1);
   // Rounded corners cost real time once there are tens of thousands of cells.
-  const rounded = radius > 0.4 && mosaic.cells.length <= 90_000;
+  const rounded = radius > 0.4 && mosaic.cells.length <= ROUND_LIMIT;
 
   for (let i = 0; i < mosaic.cells.length; i++) {
     const c = mosaic.cells[i];

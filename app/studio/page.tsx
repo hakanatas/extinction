@@ -16,14 +16,18 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Segmented, Slider, Switch, Textarea } from "@/components/ui/field";
 import {
   DEFAULT_SETTINGS,
-  buildMosaic,
+  MAX_CELLS,
+  capacityOf,
   fileToDataUrl,
   loadImage,
   mosaicToDataUrl,
+  prepareImage,
+  solveMosaic,
   type Mosaic,
   type PixelMode,
   type PixelSettings,
   type PixelShape,
+  type PreparedImage,
 } from "@/lib/pixelate";
 import { STATUSES, useWorks } from "@/lib/works-store";
 import type { Work } from "@/lib/db";
@@ -57,6 +61,7 @@ function Studio() {
   const [target, setTarget] = React.useState(3200);
   const [settings, setSettings] = React.useState<PixelSettings>(DEFAULT_SETTINGS);
   const [meta, setMeta] = React.useState({ title: "", latin: "", region: "", status: "CR", note: "" });
+  const [prepared, setPrepared] = React.useState<PreparedImage | null>(null);
   const [mosaic, setMosaic] = React.useState<Mosaic | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
@@ -99,18 +104,45 @@ function Studio() {
     };
   }, [source]);
 
-  /* The solve depends only on the picture, the number, and how the subject is
-   * cut out of it — the look-and-feel controls repaint without re-solving. */
+  /* Reading the pixels is the expensive half and it doesn't depend on the
+   * count, so it happens once per picture (and per way of cutting the subject
+   * out of it). Typing a new number then only re-runs the solve. */
   const { mode, tolerance } = settings;
   React.useEffect(() => {
-    if (!img) return;
+    if (!img) {
+      setPrepared(null);
+      return;
+    }
+    setBusy(true);
+    const timer = window.setTimeout(() => {
+      requestAnimationFrame(() => {
+        try {
+          setPrepared(prepareImage(img, { ...DEFAULT_SETTINGS, mode, tolerance }));
+          setError(null);
+        } catch {
+          setError("Görsel çözümlenemedi.");
+          setBusy(false);
+        }
+      });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [img, mode, tolerance]);
+
+  /** What this picture can actually carry — the input is clamped to it. */
+  const capacity = React.useMemo(
+    () => (prepared ? Math.min(MAX_CELLS, capacityOf(prepared)) : MAX_CELLS),
+    [prepared],
+  );
+
+  React.useEffect(() => {
+    if (!prepared) return;
     setBusy(true);
     const timer = window.setTimeout(() => {
       // Yield a frame first, so the spinner paints before the synchronous
       // solve takes the thread.
       requestAnimationFrame(() => {
         try {
-          setMosaic(buildMosaic(img, target, { ...DEFAULT_SETTINGS, mode, tolerance }));
+          setMosaic(solveMosaic(prepared, Math.min(target, capacity)));
           setError(null);
         } catch {
           setError("Piksel çözümü başarısız oldu.");
@@ -121,7 +153,7 @@ function Studio() {
       });
     }, 180);
     return () => window.clearTimeout(timer);
-  }, [img, target, mode, tolerance]);
+  }, [prepared, target, capacity]);
 
   const onFile = React.useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -147,7 +179,7 @@ function Studio() {
       region: meta.region.trim(),
       status: meta.status,
       note: meta.note.trim(),
-      count: target,
+      count: mosaic.target,
       actual: mosaic.count,
       cols: mosaic.cols,
       rows: mosaic.rows,
@@ -190,7 +222,7 @@ function Studio() {
                 </div>
               )}
             </div>
-            <Readout mosaic={mosaic} target={target} />
+            <Readout mosaic={mosaic} target={Math.min(target, capacity)} />
           </div>
         )}
 
@@ -221,10 +253,10 @@ function Studio() {
               <Input
                 type="number"
                 min={1}
-                max={400000}
+                max={capacity}
                 value={target}
                 onChange={(e) =>
-                  setTarget(Math.max(1, Math.min(400000, Number(e.target.value) || 1)))
+                  setTarget(Math.max(1, Math.min(MAX_CELLS, Number(e.target.value) || 1)))
                 }
                 className="h-16 pr-16 font-mono text-3xl tracking-tight"
               />
@@ -232,6 +264,13 @@ function Studio() {
                 piksel
               </span>
             </div>
+            {target > capacity && (
+              <p className="text-[0.85rem] leading-relaxed text-primary/90">
+                Bu görselin konusu en fazla {formatCount(capacity)} piksel taşıyabiliyor;
+                tuval o sayıda çözüldü. Daha büyük bir sayı için kadrajı daha dolu bir
+                görsel seçin ya da “Tam kare” moduna geçin.
+              </p>
+            )}
             <div className="flex flex-wrap gap-1.5">
               {PRESETS.map((p) => (
                 <button
