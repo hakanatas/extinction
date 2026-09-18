@@ -15,9 +15,9 @@ const display = Instrument_Serif({
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Extinction — Population by Pixel",
+  title: "Extinction — Piksel Portre Stüdyosu",
   description:
-    "Bir görsel ve kalan birey sayısı verin; tam o sayıda pikselden oluşan bir portre, galeri ve sunum üretilsin.",
+    "Bir görsel ve kalan birey sayısı verin; tam o sayıda pikselden oluşan bir portre, galeri ve sunum üretilsin. WWF Japan'ın 2008 \"Population by Pixel\" kampanyasından ilham alan bağımsız bir çalışma.",
 };
 
 export const viewport: Viewport = {

@@ -183,8 +183,8 @@ function IntroSlide({ count, total }: { count: number; total: number }) {
       {...fade}
       className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center"
     >
-      <span className="font-mono text-[0.8rem] uppercase tracking-[0.24em] text-muted-foreground">
-        Population by Pixel
+      <span lang="en" className="font-mono text-[0.8rem] uppercase tracking-[0.24em] text-muted-foreground">
+        Extinction
       </span>
       <h1 className="mt-8 max-w-4xl text-balance font-display text-6xl leading-[0.95] tracking-tight sm:text-8xl">
         Kalan her birey,
@@ -194,6 +194,11 @@ function IntroSlide({ count, total }: { count: number; total: number }) {
       <p className="mt-10 font-mono text-sm uppercase tracking-[0.2em] text-muted-foreground">
         <span className="tabular text-foreground">{count}</span> tür ·{" "}
         <span className="tabular text-foreground">{formatCount(total)}</span> birey
+      </p>
+
+      {/* The room should know whose idea this was, and that this is not it. */}
+      <p className="absolute inset-x-0 bottom-24 px-8 text-[0.82rem] text-muted-foreground/70">
+        WWF Japan'ın 2008 “Population by Pixel” kampanyasından ilhamla
       </p>
     </motion.section>
   );

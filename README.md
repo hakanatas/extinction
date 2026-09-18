@@ -1,12 +1,13 @@
-# Extinction — Population by Pixel
+# Extinction — Piksel Portre Stüdyosu
 
 Bir görsel ve kalan birey sayısı verirsiniz; uygulama o görseli **tam o sayıda
 pikselden** oluşan bir portreye çevirir, seçtiklerinizi galeriye dizer ve tam
 ekran bir sunuma dönüştürür.
 
-Fikir, WWF Japonya'nın 2008 tarihli *Population by Pixel* kampanyasına
-(Hakuhodo C&D Tokyo) ait: afişteki piksel sayısı, o türden doğada kalan birey
-sayısına eşit. Bu depo o denklemi bir araca çeviriyor.
+Fikrin kaynağı WWF Japonya'nın 2008 tarihli *Population by Pixel* kampanyası
+(Hakuhodo C&D Tokyo): afişteki piksel sayısı, o türden doğada kalan birey
+sayısına eşitti. Bu depo o kampanya değil, o denklemden ilham alan bağımsız
+bir araç; WWF ya da ajansla bir ilişkisi yoktur.
 
 ## Neler var
 

@@ -208,6 +208,15 @@
     text-transform: uppercase;
   }
 
+  /* Same label, left in normal case: for lines that mix Turkish with an
+   * English title, where an uppercase transform would misspell one of them. */
+  .eyebrow-plain {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    letter-spacing: 0.1em;
+  }
+
   .eyebrow-sm {
     font-family: var(--font-mono);
     font-size: 0.72rem;

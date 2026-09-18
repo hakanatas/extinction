@@ -81,8 +81,8 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-background to-transparent" />
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-          <span className="animate-rise eyebrow mb-7 rounded-full border border-border/70 bg-background/50 px-4 py-2 text-muted-foreground backdrop-blur">
-            Population by Pixel · WWF Japan, 2008
+          <span className="animate-rise eyebrow-plain mb-7 rounded-full border border-border/70 bg-background/50 px-4 py-2 text-muted-foreground backdrop-blur">
+            İlham: “Population by Pixel”, WWF Japan · 2008
           </span>
 
           <h1
@@ -207,9 +207,10 @@ export default function Home() {
       </section>
 
       <footer className="mx-auto flex max-w-6xl flex-col gap-3 border-t border-border px-6 py-12 text-[0.95rem] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <span className="max-w-xl">
-          Extinction — kalan sayıyı görselleştiren bir stüdyo. İlham: WWF Japan “Population
-          by Pixel”, Hakuhodo C&amp;D Tokyo.
+        <span className="max-w-2xl">
+          Extinction — kalan sayıyı görselleştiren bağımsız bir stüdyo. WWF Japan'ın
+          Hakuhodo C&amp;D Tokyo imzalı 2008 kampanyası “Population by Pixel”den ilham
+          alır; WWF ya da ajansla bir ilişkisi yoktur.
         </span>
         <span className="eyebrow-sm">Tüm işlem tarayıcıda, sunucusuz.</span>
       </footer>
