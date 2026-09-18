@@ -45,7 +45,7 @@ export default function GalleryPage() {
 
         <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col justify-end px-6 pb-10">
           <h1 className="font-display text-5xl tracking-tight sm:text-6xl">Galeri</h1>
-          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[0.82rem] uppercase tracking-[0.18em] text-muted-foreground">
             <span className="tabular">{ready ? works.length : "—"} eser</span>
             <span className="h-3 w-px bg-border" />
             <span className="tabular">{selected.length} seçili</span>
@@ -103,7 +103,18 @@ export default function GalleryPage() {
         )}
       </div>
 
-      <AnimatePresence>{open && <Lightbox work={open} onClose={() => setOpen(null)} />}</AnimatePresence>
+      <AnimatePresence>
+        {open && (
+          <Lightbox
+            work={open}
+            onClose={() => setOpen(null)}
+            onDelete={() => {
+              remove(open.id);
+              setOpen(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }
@@ -143,7 +154,7 @@ function Card({
             className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
           />
           <span
-            className="absolute left-3 top-3 rounded-full px-2 py-0.5 font-mono text-[0.62rem] text-background"
+            className="absolute left-3 top-3 rounded-full px-2 py-0.5 font-mono text-[0.75rem] text-background"
             style={{ background: status.tone }}
             title={status.label}
           >
@@ -154,32 +165,40 @@ function Card({
 
       <div className="flex items-end justify-between gap-3 p-4">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-medium tracking-tight">{work.title}</h3>
+          <h3 className="truncate text-base font-medium tracking-tight">{work.title}</h3>
           <p className="truncate font-display text-xs italic text-muted-foreground">
             {work.latin || work.region || "—"}
           </p>
         </div>
-        <span className="tabular shrink-0 font-mono text-lg leading-none text-primary">
+        <span className="tabular shrink-0 font-mono text-xl leading-none text-primary">
           {formatCount(work.count)}
         </span>
       </div>
 
-      {/* actions ride in from the edge; they never cover the poster at rest */}
-      <div className="absolute right-3 top-3 flex flex-col gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+      {/* Actions ride in on hover so they never cover the poster at rest —
+          except where there is no hover to ride in on: on a touch screen
+          they would simply be unreachable, so there they stay put. */}
+      <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
         <IconAction onClick={onToggle} active={work.selected} title={work.selected ? "Seçimden çıkar" : "Sunuma ekle"}>
           <Eye className="h-3.5 w-3.5" />
         </IconAction>
         <Link href={`/studio?id=${work.id}`} className={iconClass(false)} title="Stüdyoda aç">
           <Pencil className="h-3.5 w-3.5" />
         </Link>
-        <IconAction
+        {/* Two taps, and the second one says what it will do: a single
+            mis-tap should never be able to destroy a work. */}
+        <button
           onClick={() => (confirm ? onDelete() : setConfirm(true))}
           onBlur={() => setConfirm(false)}
-          title={confirm ? "Emin misin? Tekrar tıkla" : "Sil"}
-          danger={confirm}
+          title={confirm ? "Silmek için tekrar dokun" : "Sil"}
+          className={cn(
+            iconClass(false, confirm),
+            confirm && "w-auto gap-1.5 px-3 text-[0.78rem] font-medium",
+          )}
         >
           <Trash2 className="h-3.5 w-3.5" />
-        </IconAction>
+          {confirm && <span>Sil?</span>}
+        </button>
       </div>
     </motion.article>
   );
@@ -213,7 +232,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center gap-6 rounded-3xl border border-dashed border-border bg-card/20 px-6 py-24 text-center">
       <p className="font-display text-3xl tracking-tight">Galeri henüz boş</p>
-      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-md text-base leading-relaxed text-muted-foreground">
         Stüdyoda bir görsel ve kalan birey sayısı ver; ürettiğin her poster buraya düşsün,
         seçtiklerin sunuma girsin.
       </p>
@@ -225,8 +244,17 @@ function EmptyState() {
   );
 }
 
-function Lightbox({ work, onClose }: { work: Work; onClose: () => void }) {
+function Lightbox({
+  work,
+  onClose,
+  onDelete,
+}: {
+  work: Work;
+  onClose: () => void;
+  onDelete: () => void;
+}) {
   const [showSource, setShowSource] = React.useState(false);
+  const [confirm, setConfirm] = React.useState(false);
   const status = statusOf(work.status);
 
   React.useEffect(() => {
@@ -269,7 +297,7 @@ function Lightbox({ work, onClose }: { work: Work; onClose: () => void }) {
               showSource ? "opacity-100" : "opacity-0",
             )}
           />
-          <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-background/70 px-3 py-1 font-mono text-[0.62rem] uppercase tracking-widest text-muted-foreground backdrop-blur">
+          <span className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-background/70 px-3 py-1 font-mono text-[0.75rem] uppercase tracking-widest text-muted-foreground backdrop-blur">
             {showSource ? "kaynak" : "üstüne gel: kaynak"}
           </span>
         </div>
@@ -277,7 +305,7 @@ function Lightbox({ work, onClose }: { work: Work; onClose: () => void }) {
         <div className="flex flex-col justify-center gap-6">
           <div>
             <span
-              className="rounded-full px-2 py-0.5 font-mono text-[0.62rem] text-background"
+              className="rounded-full px-2 py-0.5 font-mono text-[0.75rem] text-background"
               style={{ background: status.tone }}
             >
               {status.short} · {status.label}
@@ -292,12 +320,12 @@ function Lightbox({ work, onClose }: { work: Work; onClose: () => void }) {
             <span className="tabular block font-mono text-5xl text-ember-gradient">
               {formatCount(work.count)}
             </span>
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="font-mono text-[0.8rem] uppercase tracking-[0.18em] text-muted-foreground">
               kalan birey = piksel
             </span>
           </div>
 
-          <dl className="grid grid-cols-2 gap-4 border-t border-border pt-5 text-xs">
+          <dl className="grid grid-cols-2 gap-4 border-t border-border pt-5 text-sm">
             <Meta label="Bölge" value={work.region || "—"} />
             <Meta label="Izgara" value={`${work.cols} × ${work.rows}`} />
             <Meta label="Çözüm" value={work.settings.mode === "subject" ? "Konu" : "Tam kare"} />
@@ -315,6 +343,14 @@ function Lightbox({ work, onClose }: { work: Work; onClose: () => void }) {
               <Play className="h-3 w-3 fill-current" />
               Sunumda göster
             </Link>
+            <button
+              onClick={() => (confirm ? onDelete() : setConfirm(true))}
+              onBlur={() => setConfirm(false)}
+              className={buttonStyles("destructive", "sm", "ml-auto")}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {confirm ? "Emin misin?" : "Sil"}
+            </button>
           </div>
         </div>
 
@@ -333,7 +369,7 @@ function Lightbox({ work, onClose }: { work: Work; onClose: () => void }) {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted-foreground">
+      <dt className="font-mono text-[0.75rem] uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </dt>
       <dd className="mt-1 tabular">{value}</dd>

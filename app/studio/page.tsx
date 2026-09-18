@@ -207,7 +207,7 @@ function Studio() {
         <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6 lg:pt-24">
           <div>
             <h1 className="font-display text-3xl tracking-tight">Stüdyo</h1>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Görseli bırak, kalan sayıyı yaz. Tuvale tam o kadar piksel düşer.
             </p>
           </div>
@@ -228,7 +228,7 @@ function Studio() {
                 }
                 className="h-16 pr-16 font-mono text-3xl tracking-tight"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[0.78rem] uppercase tracking-widest text-muted-foreground">
                 piksel
               </span>
             </div>
@@ -247,7 +247,7 @@ function Studio() {
                       region: p.region,
                     }));
                   }}
-                  className="rounded-full border border-border px-2.5 py-1 text-[0.68rem] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                  className="rounded-full border border-border px-3 py-1.5 text-[0.85rem] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
                 >
                   {p.title}
                   <span className="tabular ml-1.5 text-foreground/50">{formatCount(p.count)}</span>
@@ -276,13 +276,13 @@ function Studio() {
                   format={(v) => `${v}`}
                   onValueChange={(tolerance) => patch({ tolerance })}
                 />
-                <p className="text-[0.72rem] leading-relaxed text-muted-foreground">
+                <p className="text-[0.85rem] leading-relaxed text-muted-foreground">
                   Eşik, kenarlardan örneklenen arka plan rengine ne kadar yakın tonların
                   silineceğini belirler. Şeffaf PNG'lerde doğrudan alfa kanalı kullanılır.
                 </p>
               </>
             ) : (
-              <p className="text-[0.72rem] leading-relaxed text-muted-foreground">
+              <p className="text-[0.85rem] leading-relaxed text-muted-foreground">
                 Tüm kare bir ızgaraya bölünür; sayı satır × sütun olarak karşılanır.
               </p>
             )}
@@ -398,7 +398,7 @@ function Studio() {
                     type="button"
                     onClick={() => setMeta((m) => ({ ...m, status: s.key }))}
                     className={cn(
-                      "rounded-full border px-2.5 py-1 font-mono text-[0.68rem] transition-all",
+                      "rounded-full border px-3 py-1.5 font-mono text-[0.82rem] transition-all",
                       meta.status === s.key
                         ? "border-transparent text-background"
                         : "border-border text-muted-foreground hover:text-foreground",
@@ -451,7 +451,7 @@ function Studio() {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3.5">
-      <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-primary/80">{title}</h2>
+      <h2 className="font-mono text-[0.8rem] uppercase tracking-[0.2em] text-primary/80">{title}</h2>
       {children}
     </section>
   );
@@ -544,7 +544,7 @@ function Dropzone({ onFile }: { onFile: (f: File) => void }) {
       <ImagePlus className="relative h-8 w-8 text-primary" />
       <div className="relative space-y-1.5">
         <p className="text-base font-medium tracking-tight">Görseli buraya bırak</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">
+        <p className="text-sm leading-relaxed text-muted-foreground">
           PNG, JPG ya da WebP. Şeffaf arka plan en keskin sonucu verir; düz fotoğrafta arka
           plan eşiğiyle oynayabilirsin.
         </p>
@@ -557,7 +557,7 @@ function Readout({ mosaic, target }: { mosaic: Mosaic | null; target: number }) 
   if (!mosaic) return null;
   const exact = Math.abs(mosaic.count - target) <= Math.max(2, target * 0.005);
   return (
-    <div className="relative mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+    <div className="relative mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[0.82rem] uppercase tracking-[0.16em] text-muted-foreground">
       <span className="tabular">
         <span className={cn(exact ? "text-primary" : "text-destructive")}>
           {formatCount(mosaic.count)}

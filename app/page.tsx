@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import * as React from "react";
-import { ArrowRight, Images, MoveRight, Sigma, Upload } from "lucide-react";
+import { ArrowDown, ArrowRight, Images, MoveRight, Sigma, Upload } from "lucide-react";
 import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 import { buttonStyles } from "@/components/ui/button";
+import { Reveal, RevealWords } from "@/components/manifesto/reveal";
+import { Ticker } from "@/components/manifesto/ticker";
+import { VanishingSequence } from "@/components/manifesto/vanishing-sequence";
 import { useWorks } from "@/lib/works-store";
-import { formatCount } from "@/lib/utils";
 import { asset } from "@/lib/base-path";
+import { formatCount } from "@/lib/utils";
 
 /** Shown until the user has made work of their own. */
 const SAMPLES = [
@@ -20,6 +23,20 @@ const SAMPLES = [
   "condor",
   "pangolin",
 ].map((n) => ({ src: asset(`/samples/${n}.svg`), alt: `${n} piksel portresi` }));
+
+/** Widely cited field estimates; the point is the order of magnitude. */
+const POPULATIONS = [
+  { title: "Vaquita", count: 10 },
+  { title: "Java gergedanı", count: 76 },
+  { title: "Amur leoparı", count: 120 },
+  { title: "Kakapo", count: 247 },
+  { title: "Sumatra kaplanı", count: 400 },
+  { title: "Kuzey Atlantik sağ balinası", count: 370 },
+  { title: "Dev panda", count: 1864 },
+  { title: "Vahşi kaplan", count: 3200 },
+  { title: "Kar leoparı", count: 4500 },
+  { title: "Sumatra orangutanı", count: 13800 },
+];
 
 const STEPS = [
   {
@@ -56,7 +73,7 @@ export default function Home() {
         images={images}
         cards={10}
         speed={22}
-        axis={52}
+        axis={50}
         className="h-[100svh] w-full"
       >
         {/* The corridor is bright at the edges, so the copy sits in its own well. */}
@@ -64,12 +81,12 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-background to-transparent" />
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-          <span className="animate-rise mb-6 rounded-full border border-border/70 bg-background/50 px-4 py-1.5 font-mono text-[0.68rem] uppercase tracking-[0.22em] text-muted-foreground backdrop-blur">
+          <span className="animate-rise eyebrow mb-7 rounded-full border border-border/70 bg-background/50 px-4 py-2 text-muted-foreground backdrop-blur">
             Population by Pixel · WWF Japan, 2008
           </span>
 
           <h1
-            className="animate-rise max-w-4xl text-balance font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl lg:text-[5.5rem]"
+            className="animate-rise max-w-5xl text-balance font-display text-[clamp(3.25rem,10vw,7.5rem)] leading-[0.92] tracking-tight"
             style={{ animationDelay: "80ms" }}
           >
             Kalan her birey,
@@ -78,7 +95,7 @@ export default function Home() {
           </h1>
 
           <p
-            className="animate-rise mt-7 max-w-xl text-balance text-[0.98rem] leading-relaxed text-muted-foreground"
+            className="animate-rise mt-8 max-w-2xl text-balance text-lg leading-relaxed text-muted-foreground sm:text-xl"
             style={{ animationDelay: "160ms" }}
           >
             Bir tür ne kadar azaldıysa portresi o kadar çözünürlüğünü yitirir. Görseli ve
@@ -86,7 +103,7 @@ export default function Home() {
           </p>
 
           <div
-            className="animate-rise mt-10 flex flex-wrap items-center justify-center gap-3"
+            className="animate-rise mt-11 flex flex-wrap items-center justify-center gap-3"
             style={{ animationDelay: "240ms" }}
           >
             <Link href="/studio" className={buttonStyles("default", "lg", "group")}>
@@ -99,76 +116,102 @@ export default function Home() {
           </div>
 
           <div
-            className="animate-rise absolute inset-x-0 bottom-8 flex items-center justify-center gap-8 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground"
+            className="animate-rise absolute inset-x-0 bottom-8 flex flex-col items-center gap-3"
             style={{ animationDelay: "320ms" }}
           >
-            <span className="tabular">{ready ? works.length : "—"} eser</span>
-            <span className="h-3 w-px bg-border" />
-            <span className="tabular">{ready ? formatCount(total) : "—"} piksel</span>
+            <div className="eyebrow-sm flex items-center gap-6 text-muted-foreground">
+              <span className="tabular">{ready ? works.length : "—"} eser</span>
+              <span className="h-3 w-px bg-border" />
+              <span className="tabular">{ready ? formatCount(total) : "—"} piksel</span>
+            </div>
+            <ArrowDown className="animate-drift h-4 w-4 text-muted-foreground" aria-hidden />
           </div>
         </div>
       </ImageStreamHero>
 
-      <section className="mx-auto w-full max-w-6xl px-6 py-28">
-        <div className="grid gap-16 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
-            <h2 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+      {/* The numbers first, without commentary: they do their own arguing. */}
+      <section className="border-y border-border bg-card/20 py-6">
+        <Ticker items={POPULATIONS} duration={64} />
+        <Ticker items={[...POPULATIONS].reverse()} duration={78} reverse className="opacity-55" />
+      </section>
+
+      <VanishingSequence />
+
+      <section className="mx-auto w-full max-w-6xl px-6 py-32">
+        <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+          <Reveal>
+            <h2 className="font-display text-[clamp(2.5rem,5vw,4rem)] leading-[1.05] tracking-tight">
               Sayı, görüntünün
               <br />
               <span className="italic text-muted-foreground">çözünürlüğü olur.</span>
             </h2>
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-muted-foreground">
+          </Reveal>
+          <Reveal delay={0.1}>
+            <p className="max-w-xl text-lg leading-relaxed text-muted-foreground lg:pt-4">
               Hakuhodo C&amp;D Tokyo'nun 2008 kampanyası basit bir denklem kurmuştu: geriye
               kaç birey kaldıysa, afişte o kadar piksel var. 3.200 pikselden yapılmış bir
-              kaplan, uzaktan hâlâ bir kaplan; yaklaştığınızda dağılıyor. Bu uygulama o
+              kaplan uzaktan hâlâ bir kaplan; yaklaştığınızda dağılıyor. Bu uygulama o
               denklemi bir araca çeviriyor.
             </p>
-          </div>
+          </Reveal>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-3 lg:gap-5">
-            {STEPS.map((s, i) => (
-              <div
-                key={s.title}
-                className="group relative overflow-hidden rounded-2xl border border-border bg-card/40 p-6 transition-colors duration-300 hover:border-primary/40"
-              >
+        {/* full width below the copy: three narrow columns beside a headline
+            squeeze the body text down to two words a line */}
+        <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <Reveal key={s.title} delay={i * 0.09}>
+              <div className="group relative h-full overflow-hidden rounded-2xl border border-border bg-card/40 p-8 transition-colors duration-300 hover:border-primary/40">
                 <div className="bg-lattice pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-40" />
-                <span className="relative font-mono text-xs text-muted-foreground">
-                  0{i + 1}
-                </span>
-                <s.icon className="relative mt-6 h-5 w-5 text-primary" />
-                <h3 className="relative mt-4 text-base font-medium tracking-tight">{s.title}</h3>
-                <p className="relative mt-2 text-[0.82rem] leading-relaxed text-muted-foreground">
+                <span className="eyebrow-sm relative text-muted-foreground">0{i + 1}</span>
+                <s.icon className="relative mt-8 h-6 w-6 text-primary" />
+                <h3 className="relative mt-5 text-xl font-medium tracking-tight">{s.title}</h3>
+                <p className="relative mt-3 text-[1.02rem] leading-relaxed text-muted-foreground">
                   {s.body}
                 </p>
               </div>
-            ))}
-          </div>
+            </Reveal>
+          ))}
         </div>
       </section>
 
       <section className="border-y border-border bg-card/20">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-20 sm:flex-row sm:items-end sm:justify-between">
-          <blockquote className="max-w-2xl font-display text-2xl leading-snug tracking-tight sm:text-3xl">
-            “Bu poster {formatCount(3200)} pikselden oluşuyor; çünkü doğada
-            <span className="text-ember-gradient"> {formatCount(3200)} kaplan </span>
-            kaldı.”
+        <div className="mx-auto max-w-5xl px-6 py-28 text-center">
+          <blockquote className="font-display text-[clamp(2.25rem,5.5vw,4.5rem)] leading-[1.08] tracking-tight">
+            <RevealWords text="Bir türü kaybetmek, önce onu göremez hâle gelmektir." />
           </blockquote>
-          <Link
-            href="/studio"
-            className="group flex shrink-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Kendi posterini üret
-            <MoveRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
+          <Reveal delay={0.5}>
+            <p className="mx-auto mt-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Tersi de mümkün. Korumanın kazandığı her birey, tabloya geri konan bir
+              pikseldir — ve portre yeniden netleşir.
+            </p>
+          </Reveal>
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-12 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <span>
+      <section className="mx-auto max-w-6xl px-6 py-28">
+        <Reveal className="flex flex-col items-start justify-between gap-10 sm:flex-row sm:items-end">
+          <h2 className="max-w-xl text-balance font-display text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.06] tracking-tight">
+            Şimdi sayıyı sen ver.
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/studio" className={buttonStyles("default", "lg", "group")}>
+              Kendi posterini üret
+              <MoveRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
+            <Link href="/gallery" className={buttonStyles("outline", "lg")}>
+              Galeri
+            </Link>
+          </div>
+        </Reveal>
+      </section>
+
+      <footer className="mx-auto flex max-w-6xl flex-col gap-3 border-t border-border px-6 py-12 text-[0.95rem] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span className="max-w-xl">
           Extinction — kalan sayıyı görselleştiren bir stüdyo. İlham: WWF Japan “Population
           by Pixel”, Hakuhodo C&amp;D Tokyo.
         </span>
-        <span className="font-mono tracking-wider">Tüm işlem tarayıcıda, sunucusuz.</span>
+        <span className="eyebrow-sm">Tüm işlem tarayıcıda, sunucusuz.</span>
       </footer>
     </main>
   );

@@ -21,7 +21,7 @@
   --secondary: oklch(0.26 0.007 286);
   --secondary-foreground: oklch(0.96 0.004 286);
   --muted: oklch(0.24 0.006 286);
-  --muted-foreground: oklch(0.68 0.012 286);
+  --muted-foreground: oklch(0.755 0.012 286);
   --accent: oklch(0.28 0.01 286);
   --accent-foreground: oklch(0.97 0.004 286);
   --destructive: oklch(0.62 0.21 26);
@@ -48,7 +48,7 @@
   --secondary: oklch(0.94 0.004 286);
   --secondary-foreground: oklch(0.22 0.006 286);
   --muted: oklch(0.95 0.004 286);
-  --muted-foreground: oklch(0.48 0.01 286);
+  --muted-foreground: oklch(0.44 0.01 286);
   --accent: oklch(0.94 0.004 286);
   --accent-foreground: oklch(0.2 0.006 286);
   --border: oklch(0.18 0.006 286 / 12%);
@@ -94,14 +94,31 @@
     border-color: var(--border);
   }
 
+  /* Everything is authored in rem, so the whole interface scales from here.
+   * 17px on anything wider than a phone: this is a reading surface as much
+   * as a tool, and the default 16 left the captions undersized. */
   html {
     scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  @media (min-width: 640px) {
+    html {
+      font-size: 17px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: 18px;
+    }
   }
 
   body {
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -179,6 +196,25 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  /* The small mono capitals used for labels and readouts. Wide tracking
+   * needs size to stay legible, so it is set once here instead of being
+   * re-guessed at every call site. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .eyebrow-sm {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
 }
 
 @keyframes rise {
@@ -208,4 +244,43 @@
 
 .animate-pulse-soft {
   animation: pulse-soft 2.6s ease-in-out infinite;
+}
+
+/* ── manifesto motion ───────────────────────────────────────── */
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    /* the track holds two identical copies, so -50% is one seamless lap */
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee var(--marquee-duration, 48s) linear infinite;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+.animate-drift {
+  animation: drift 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-drift,
+  .animate-pulse-soft,
+  .animate-rise {
+    animation: none;
+  }
 }

@@ -149,6 +149,18 @@ interface Analysis {
   bSat: Float64Array;
 }
 
+/**
+ * An analysed image, ready to be solved at any population count.
+ *
+ * Reading the pixels and building the tables is the expensive half and it
+ * doesn't depend on the count, so anything that needs the same picture at
+ * several counts — a sequence, a scrubber — prepares once and solves often.
+ */
+export interface PreparedImage {
+  analysis: Analysis;
+  settings: PixelSettings;
+}
+
 function rect(sat: Float64Array, w: number, x0: number, y0: number, x1: number, y1: number) {
   const s = w + 1;
   return sat[y1 * s + x1] - sat[y0 * s + x1] - sat[y1 * s + x0] + sat[y0 * s + x0];
@@ -340,12 +352,21 @@ function grade(r: number, g: number, b: number, s: PixelSettings): [number, numb
  * Build the mosaic whose visible cell count equals `target` as closely as
  * the picture allows. See the note at the top for why it takes two searches.
  */
+export function prepareImage(img: HTMLImageElement, settings: PixelSettings): PreparedImage {
+  return { analysis: analyse(img, settings), settings };
+}
+
+/** One-shot: prepare and solve. Use `prepareImage` + `solveMosaic` for a series. */
 export function buildMosaic(
   img: HTMLImageElement,
   target: number,
   settings: PixelSettings,
 ): Mosaic {
-  const a = analyse(img, settings);
+  return solveMosaic(prepareImage(img, settings), target);
+}
+
+export function solveMosaic(prepared: PreparedImage, target: number): Mosaic {
+  const { analysis: a, settings } = prepared;
   const aspect = a.w / a.h;
   const wanted = Math.max(1, Math.round(target));
 

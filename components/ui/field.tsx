@@ -7,7 +7,7 @@ export function Label({ className, ...props }: React.ComponentProps<"label">) {
   return (
     <label
       className={cn(
-        "text-[0.7rem] font-medium uppercase tracking-[0.14em] text-muted-foreground",
+        "text-[0.82rem] font-medium uppercase tracking-[0.14em] text-muted-foreground",
         className,
       )}
       {...props}
@@ -68,7 +68,7 @@ export function Slider({
     <div className={cn("space-y-2", className)}>
       <div className="flex items-baseline justify-between">
         <Label>{label}</Label>
-        <span className="tabular text-xs text-foreground/70">
+        <span className="tabular font-mono text-[0.85rem] text-foreground/80">
           {format ? format(value) : value.toFixed(2)}
         </span>
       </div>
@@ -113,7 +113,7 @@ export function Segmented<T extends string>({
           type="button"
           onClick={() => onValueChange(o.value)}
           className={cn(
-            "flex-1 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200",
+            "flex-1 rounded-full px-3 py-2 text-[0.85rem] font-medium transition-all duration-200",
             value === o.value
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground",

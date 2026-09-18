@@ -127,7 +127,7 @@ export default function PresentPage() {
           </div>
         </div>
 
-        <span className="tabular font-mono text-[0.68rem] uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="tabular font-mono text-[0.8rem] uppercase tracking-[0.18em] text-muted-foreground">
           {String(index + 1).padStart(2, "0")} / {String(slides).padStart(2, "0")}
         </span>
 
@@ -183,7 +183,7 @@ function IntroSlide({ count, total }: { count: number; total: number }) {
       {...fade}
       className="absolute inset-0 z-10 flex flex-col items-center justify-center px-8 text-center"
     >
-      <span className="font-mono text-[0.68rem] uppercase tracking-[0.24em] text-muted-foreground">
+      <span className="font-mono text-[0.8rem] uppercase tracking-[0.24em] text-muted-foreground">
         Population by Pixel
       </span>
       <h1 className="mt-8 max-w-4xl text-balance font-display text-6xl leading-[0.95] tracking-tight sm:text-8xl">
@@ -191,7 +191,7 @@ function IntroSlide({ count, total }: { count: number; total: number }) {
         <br />
         <span className="text-ember-gradient italic">tek bir piksel.</span>
       </h1>
-      <p className="mt-10 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
+      <p className="mt-10 font-mono text-sm uppercase tracking-[0.2em] text-muted-foreground">
         <span className="tabular text-foreground">{count}</span> tür ·{" "}
         <span className="tabular text-foreground">{formatCount(total)}</span> birey
       </p>
@@ -229,7 +229,7 @@ function WorkSlide({ work }: { work: Work }) {
       <div className="flex shrink-0 flex-col justify-center gap-7 px-8 pb-24 lg:w-[38%] lg:px-14 lg:pb-16">
         <div>
           <span
-            className="rounded-full px-2.5 py-1 font-mono text-[0.62rem] text-background"
+            className="rounded-full px-2.5 py-1 font-mono text-[0.75rem] text-background"
             style={{ background: status.tone }}
           >
             {status.short} · {status.label}
@@ -244,19 +244,19 @@ function WorkSlide({ work }: { work: Work }) {
 
         <div>
           <CountUp value={work.count} />
-          <p className="mt-2 font-mono text-[0.68rem] uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="mt-2 font-mono text-[0.8rem] uppercase tracking-[0.2em] text-muted-foreground">
             kalan birey · ekrandaki piksel
           </p>
         </div>
 
         {work.region && (
-          <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="font-mono text-[0.82rem] uppercase tracking-[0.16em] text-muted-foreground">
             {work.region}
           </p>
         )}
 
         {work.note && (
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">{work.note}</p>
+          <p className="max-w-md text-base leading-relaxed text-muted-foreground">{work.note}</p>
         )}
       </div>
     </motion.section>
@@ -277,13 +277,13 @@ function OutroSlide({ deck, total }: { deck: Work[]; total: number }) {
 
       <ul className="flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-2">
         {deck.map((w) => (
-          <li key={w.id} className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+          <li key={w.id} className="font-mono text-[0.82rem] uppercase tracking-[0.16em] text-muted-foreground">
             {w.title} <span className="tabular text-foreground">{formatCount(w.count)}</span>
           </li>
         ))}
       </ul>
 
-      <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
         Sayı küçüldükçe görüntü dağılır. Tersi de mümkün: her kazanılan birey, tabloya bir
         piksel geri koyar.
       </p>
@@ -324,7 +324,7 @@ function NothingSelected() {
   return (
     <main className="flex h-[100svh] flex-col items-center justify-center gap-6 px-6 text-center">
       <p className="font-display text-4xl tracking-tight">Sunulacak eser yok</p>
-      <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-md text-base leading-relaxed text-muted-foreground">
         Galeriden en az bir eser seç ya da stüdyoda yeni bir poster üret.
       </p>
       <div className="flex gap-2">

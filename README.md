@@ -12,9 +12,9 @@ sayısına eşit. Bu depo o denklemi bir araca çeviriyor.
 
 | Rota | İş |
 | --- | --- |
-| `/` | Koridor akışlı manifesto sayfası; kendi eserleriniz kartlara düşer |
+| `/` | Manifesto: koridor akışı, kalan sayı şeridi ve kaydırdıkça piksel sayısı düşen "yok oluş" bölümü |
 | `/studio` | Yükleme, pikselleştirme ve künye paneli |
-| `/gallery` | Üretilen eserler, seçim, karşılaştırmalı büyütme |
+| `/gallery` | Üretilen eserler, seçim, karşılaştırmalı büyütme, silme |
 | `/present` | Açılış + eser + kapanış slaytlarından oluşan tam ekran sunum |
 
 Her şey tarayıcıda çalışır: sunucu yok, yükleme yok. Eserler IndexedDB'de
@@ -35,6 +35,11 @@ saklanır, dışa aktarım PNG olarak inerken sunum aynı cihazda kalır.
 İki adım da maske ve maskelenmiş renk kanalları üzerinde kurulan *summed-area
 table*'lara dayanır; her dikdörtgen sorgusu O(1) olduğu için çözüm tam boy bir
 fotoğrafta bile etkileşimli kalır.
+
+Görsel bir kez analiz edilip birden çok sayıda çözülebilir (`prepareImage` +
+`solveMosaic`); manifestodaki kaydırmalı dizi bunu kullanır — her durak, o
+sayıda pikselle yapılmış gerçek bir çözümdür, soldurma ya da bulanıklaştırma
+değil.
 
 Şeffaf PNG'lerde siluet doğrudan alfa kanalından gelir. Düz fotoğraflarda arka
 plan, kare kenarlarından örneklenen medyan renkle tahmin edilir; **arka plan
