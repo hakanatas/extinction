@@ -16,18 +16,57 @@ import { cn } from "@/lib/utils";
  * publish to the gallery, which is the same thing. It is kept in this
  * browser and never leaves it except as an Authorization header to GitHub.
  */
-export function AdminGate({ className }: { className?: string }) {
-  const { isAdmin, signIn, signOut } = useWorks();
+const OpenAdmin = React.createContext<() => void>(() => undefined);
+
+/** Open the admin dialog from anywhere on the page. */
+export function useAdminDialog() {
+  return React.useContext(OpenAdmin);
+}
+
+/** Holds the dialog, so the nav key is not the only way in. */
+export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
+  const show = React.useCallback(() => setOpen(true), []);
+  return (
+    <OpenAdmin.Provider value={show}>
+      {children}
+      <AdminDialog open={open} onClose={() => setOpen(false)} />
+    </OpenAdmin.Provider>
+  );
+}
+
+/** The key in the navigation bar. */
+export function AdminGate({ className }: { className?: string }) {
+  const { isAdmin } = useWorks();
+  const open = useAdminDialog();
+  return (
+    <button
+      onClick={open}
+      title={isAdmin ? "Yönetici oturumu açık" : "Yönetici girişi"}
+      aria-label={isAdmin ? "Yönetici oturumu açık" : "Yönetici girişi"}
+      className={cn(
+        "flex h-9 items-center gap-1.5 rounded-full px-2 transition-colors",
+        isAdmin ? "text-primary" : "text-muted-foreground hover:text-foreground",
+        className,
+      )}
+    >
+      {isAdmin ? <ShieldCheck className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
+      <span className="hidden text-sm lg:inline">{isAdmin ? "Yönetici" : "Giriş"}</span>
+    </button>
+  );
+}
+
+function AdminDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { isAdmin, signIn, signOut } = useWorks();
   const [token, setToken] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [onClose]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +75,7 @@ export function AdminGate({ className }: { className?: string }) {
     try {
       await signIn(token.trim());
       setToken("");
-      setOpen(false);
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Giriş yapılamadı.");
     } finally {
@@ -45,27 +84,13 @@ export function AdminGate({ className }: { className?: string }) {
   };
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        title={isAdmin ? "Yönetici oturumu açık" : "Yönetici girişi"}
-        aria-label={isAdmin ? "Yönetici oturumu açık" : "Yönetici girişi"}
-        className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
-          isAdmin ? "text-primary" : "text-muted-foreground hover:text-foreground",
-          className,
-        )}
-      >
-        {isAdmin ? <ShieldCheck className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
-      </button>
-
-      <AnimatePresence>
+    <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setOpen(false)}
+            onClick={onClose}
             className="fixed inset-0 z-[70] flex items-center justify-center bg-background/90 p-6 backdrop-blur-xl"
           >
             <motion.div
@@ -77,7 +102,7 @@ export function AdminGate({ className }: { className?: string }) {
               className="relative w-full max-w-lg rounded-2xl border border-border bg-card p-8"
             >
               <button
-                onClick={() => setOpen(false)}
+                onClick={onClose}
                 aria-label="Kapat"
                 className="absolute right-5 top-5 text-muted-foreground transition-colors hover:text-foreground"
               >
@@ -98,7 +123,7 @@ export function AdminGate({ className }: { className?: string }) {
                     className="mt-7"
                     onClick={() => {
                       signOut();
-                      setOpen(false);
+                      onClose();
                     }}
                   >
                     <LogOut className="h-4 w-4" />
@@ -152,9 +177,8 @@ export function AdminGate({ className }: { className?: string }) {
                 </form>
               )}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

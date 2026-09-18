@@ -3,6 +3,7 @@ import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { WorksProvider } from "@/lib/works-store";
 import { SiteNav } from "@/components/site-nav";
+import { AdminProvider } from "@/components/admin-gate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const display = Instrument_Serif({
@@ -29,8 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="tr" suppressHydrationWarning>
       <body className={`${inter.variable} ${display.variable} ${mono.variable} antialiased`}>
         <WorksProvider>
-          <SiteNav />
-          {children}
+          <AdminProvider>
+            <SiteNav />
+            {children}
+          </AdminProvider>
         </WorksProvider>
       </body>
     </html>

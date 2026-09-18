@@ -8,6 +8,7 @@ import {
   CloudUpload,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
   Pencil,
   Play,
@@ -19,6 +20,7 @@ import {
 import { ImageStreamHero } from "@/components/ui/image-stream-hero";
 import { buttonStyles } from "@/components/ui/button";
 import { statusOf, useWorks, type GalleryWork } from "@/lib/works-store";
+import { useAdminDialog } from "@/components/admin-gate";
 import { cn, formatCount } from "@/lib/utils";
 
 export default function GalleryPage() {
@@ -26,6 +28,7 @@ export default function GalleryPage() {
     useWorks();
   const [open, setOpen] = React.useState<GalleryWork | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const openAdmin = useAdminDialog();
 
   const totalPixels = selected.reduce((s, w) => s + w.count, 0);
   const unpublished = works.filter((w) => w.origin === "local" && !w.pendingPublish).length;
@@ -105,13 +108,23 @@ export default function GalleryPage() {
           </p>
         )}
 
+        {/* The way to publish should be in front of whoever has something
+            unpublished, not hidden behind an unlabelled key in the nav. */}
         {unpublished > 0 && (
-          <p className="mb-6 rounded-xl border border-border bg-card/40 px-4 py-3 text-[0.95rem] leading-relaxed text-muted-foreground">
-            {unpublished} eser yalnızca bu cihazda duruyor.{" "}
-            {isAdmin
-              ? "Herkesin görmesi için kartın üstündeki bulut simgesiyle yayınlayın."
-              : "Herkesin görebilmesi için bir yöneticinin yayınlaması gerekiyor."}
-          </p>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card/40 px-4 py-3">
+            <p className="text-[0.95rem] leading-relaxed text-muted-foreground">
+              {unpublished} eser yalnızca bu cihazda duruyor.{" "}
+              {isAdmin
+                ? "Herkesin görmesi için kartın sağ üstündeki bulut simgesine basın."
+                : "Herkesin görebilmesi için yönetici girişi yapın."}
+            </p>
+            {!isAdmin && (
+              <button onClick={openAdmin} className={buttonStyles("outline", "sm")}>
+                <KeyRound className="h-3.5 w-3.5" />
+                Yönetici girişi
+              </button>
+            )}
+          </div>
         )}
 
         {ready && works.length === 0 ? (
